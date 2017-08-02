@@ -121,6 +121,7 @@ h3 {
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: left;
+    font-size: 15pt;
 }
 #sign-in-button {
     margin-left: 10px;

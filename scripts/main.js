@@ -107,7 +107,7 @@ function createPostElement(postId, title, text, author, authorId, authorPic) {
             '<div class="star-count">0</div>' +
           '</span>' +
           '<div class="text"></div>' +
-          '<div class="comments-container"></div>' +
+          '<div class="comments-container"><h5>Comments</h5><ul class="commentsList mdl-list"></ul></div>' +         
           '<form class="add-comment" action="#">' +
             '<div class="mdl-textfield mdl-js-textfield">' +
               '<input class="mdl-textfield__input new-comment" type="text">' +
@@ -141,7 +141,7 @@ function createPostElement(postId, title, text, author, authorId, authorPic) {
   // [START child_event_listener_recycler]
   var commentsRef = firebase.database().ref('post-comments/' + postId);
   commentsRef.on('child_added', function(data) {
-    addCommentElement(postElement, data.key, data.val().text, data.val().author);
+    addCommentElement(postElement, data.key, data.val().text, data.val().author, data.val().userImage);
   });
 
   commentsRef.on('child_changed', function(data) {
@@ -175,7 +175,9 @@ function createPostElement(postId, title, text, author, authorId, authorPic) {
   // Create new comment.
   addCommentForm.onsubmit = function(e) {
     e.preventDefault();
-    createNewComment(postId, firebase.auth().currentUser.displayName, uid, commentInput.value);
+    var user = firebase.auth().currentUser;
+    console.log(user.photoURL);
+    createNewComment(postId, user.displayName, user.photoURL, uid, commentInput.value);
     commentInput.value = '';
     commentInput.parentElement.MaterialTextfield.boundUpdateClassesHandler();
   };
@@ -196,10 +198,11 @@ function createPostElement(postId, title, text, author, authorId, authorPic) {
 /**
  * Writes a new comment for the given post.
  */
-function createNewComment(postId, username, uid, text) {
+function createNewComment(postId, username, userImage, uid, text) {
   firebase.database().ref('post-comments/' + postId).push({
     text: text,
     author: username,
+    userImage: userImage,
     uid: uid
   });
 }
@@ -227,15 +230,25 @@ function updateStarCount(postElement, nbStart) {
 /**
  * Creates a comment element and adds it to the given postElement.
  */
-function addCommentElement(postElement, id, text, author) {
+function addCommentElement(postElement, id, text, author, authorImage) {
   var comment = document.createElement('div');
   comment.classList.add('comment-' + id);
-  comment.innerHTML = '<span class="username"></span><span class="comment"></span>';
-  comment.getElementsByClassName('comment')[0].innerText = text;
-  comment.getElementsByClassName('username')[0].innerText = author || 'Anonymous';
+  comment.innerHTML = '<li class="mdl-list__item mdl-list__item--three-line">' +
+                        '<span class="mdl-list__item-primary-content">' +
+                          '<span class="mdl-list__item-avatar avatar"></span>' +
+                          '<span class="authorName"></span>' +
+                          '<span class="mdl-list__item-text-body">' +
+                          '</span>' +
+                        '</span>' +
+                      '</li>';
+  comment.getElementsByClassName('mdl-list__item-text-body')[0].innerText = text;
+  comment.getElementsByClassName('authorName')[0].innerText = author || 'Anonymous';
+  comment.getElementsByClassName('avatar')[0].style.backgroundImage = 'url("' +
+      (authorImage || './silhouette.jpg') + '")';
 
   var commentsContainer = postElement.getElementsByClassName('comments-container')[0];
-  commentsContainer.appendChild(comment);
+  var commentsList = commentsContainer.getElementsByClassName('commentsList')[0];
+  commentsList.appendChild(comment);
 }
 
 /**
